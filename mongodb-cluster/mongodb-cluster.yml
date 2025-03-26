@@ -1,0 +1,89 @@
+version: "3.8"
+
+services:
+  mongo1:
+    image: mongo:8.0.5
+    command: mongod --replSet myReplicaSet --bind_ip_all --auth --keyFile /etc/mongo-keyfile
+    networks:
+      - mongo-network
+    ports:
+      - "27017:27017"
+    deploy:
+      placement:
+        constraints: [node.hostname == db-server-1]
+      restart_policy:
+        condition: on-failure
+    volumes:
+      - mongo_data:/data/db
+      - /home/support/keyfile/mongodb-keyfile:/etc/mongo-keyfile:ro
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
+  mongo2:
+    image: mongo:8.0.5
+    command: mongod --replSet myReplicaSet --bind_ip_all --auth --keyFile /etc/mongo-keyfile
+    networks:
+      - mongo-network
+    ports:
+      - "27018:27017"
+    deploy:
+      placement:
+        constraints: [node.hostname == db-server-2]
+      restart_policy:
+        condition: on-failure
+    volumes:
+      - mongo_data:/data/db
+      - /home/support/keyfile/mongodb-keyfile:/etc/mongo-keyfile:ro
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
+  mongo3:
+    image: mongo:8.0.5
+    command: mongod --replSet myReplicaSet --bind_ip_all --auth --keyFile /etc/mongo-keyfile
+    networks:
+      - mongo-network
+    ports:
+      - "27019:27017"
+    deploy:
+      placement:
+        constraints: [node.hostname == db-server-3]
+      restart_policy:
+        condition: on-failure
+    volumes:
+      - mongo_data:/data/db
+      - /home/support/keyfile/mongodb-keyfile:/etc/mongo-keyfile:ro
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
+  restheart:
+    image: softinstigate/restheart:8.3.4
+    networks:
+      - mongo-network
+
+    environment:
+      RHO: >
+        /mclient/connection-string->"mongodb://idrakuser:123idrak123@65.21.159.98:27017,95.217.187.105:27018,157.180.31.13:27019/idrakdb?replicaSet=myReplicaSet&readPreference=secondaryPreferred&w=1&authSource=admin";
+        /http-listener/host-> "0.0.0.0";
+        /fileRealmAuthenticator/users[userid='admin']/roles->'["readWrite@idrakdb"]';
+        /mongo/mongo-mounts[1]->{"where": "/api", "what": "idrakdb"}
+
+    ports:
+      - "8080:8080"
+    deploy:
+      placement:
+        constraints: [node.hostname == manager-1]
+    depends_on:
+      - mongo1
+      - mongo2
+      - mongo3
+
+networks:
+  mongo-network:
+    external: true
+
+volumes:
+  mongo_data:
+    external: true
