@@ -1,0 +1,38 @@
+version: "3.8"
+
+services:
+  rabbitmq:
+    image: rabbitmq:4.0.7-management
+    hostname: rabbitmq{{.Task.Slot}} # Unique hostname for each replica
+    environment:
+      RABBITMQ_USE_LONGNAME: "false"
+      RABBITMQ_NODENAME: rabbit@rabbitmq{{.Task.Slot}} #Unique node name
+      RABBITMQ_ERLANG_COOKIE: "supersecretcookie"
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+      RABBITMQ_CLUSTER_FORMATION_NODE_TYPE: "disc"
+      RABBITMQ_CLUSTER_FORMATION_PEER_DISCOVERY_TYPE: "static"
+      RABBITMQ_CLUSTER_FORMATION_STATIC_NODES: "rabbit@rabbitmq1,rabbit@rabbitmq2,rabbit@rabbitmq3"
+    ports:
+      - "5672:5672" # AMQP
+      - "15672:15672" # Management UI
+      - "25672:25672" # Erlang distribution
+      - "4369:4369"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - mongo-network
+    deploy:
+      mode: replicated
+      replicas: 3
+      placement:
+        constraints:
+          - node.labels.role == db # Place on db servers
+
+volumes:
+  rabbitmq_data:
+    external: true
+
+networks:
+  mongo-network:
+    external: true
