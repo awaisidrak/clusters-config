@@ -1,0 +1,45 @@
+mongodb:
+  uri: "mongodb://idrakuser:123idrak123@65.21.159.98:31017,95.217.187.105:31018,157.180.31.13:31019/idrakdb?authSource=admin&replicaSet=rs0"
+
+
+serviceMonitor:
+  enabled: true
+  interval: 30s
+  scrapeTimeout: 10s
+  additionalLabels:
+    release: prom
+  metricRelabelings:
+    - sourceLabels: [__name__]
+      regex: ".*"
+      action: keep  # <-- you can filter later if needed
+
+
+extraArgs:
+  - --compatible-mode  # <-- makes it compatible across MongoDB versions
+  - --mongodb.direct-connect=false  # 🔥 this is what was missing
+  - --collector.diagnosticdata
+  - --collector.replicasetstatus
+  - --collector.dbstats
+  - --collector.topmetrics
+  - --collector.indexstats
+  - --collector.collstats
+  - --collector.dbstatsfreestorage
+  - --collector.currentopmetrics
+  - --collector.fcv
+  - --log.level=debug
+  - --discovering-mode
+
+
+livenessProbe:
+  httpGet:
+    path: /metrics
+    port: 9216
+  initialDelaySeconds: 10
+  periodSeconds: 15
+
+readinessProbe:
+  httpGet:
+    path: /metrics
+    port: 9216
+  initialDelaySeconds: 5
+  periodSeconds: 10
