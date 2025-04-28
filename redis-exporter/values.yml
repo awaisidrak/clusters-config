@@ -1,0 +1,18 @@
+redisAddress: "redis://my-redis.v8bot.svc.cluster.local:6379"
+
+auth:
+  enabled: true
+  redisPassword: idrakredis321
+
+service:
+  type: NodePort
+  port: 9121
+  nodePort: 31837  # Replace with an available NodePort
+
+serviceMonitor:
+  enabled: true
+  interval: 15s
+  scrapeTimeout: 10s
+  labels:
+    release: prom
+  namespace: monitoring
