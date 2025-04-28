@@ -1,0 +1,42 @@
+config:
+  global:
+    resolve_timeout: 5m
+
+  route:
+    receiver: bitrix
+    group_by: ['alertname', 'severity']
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 6h
+
+  receivers:
+    - name: bitrix
+      webhook_configs:
+        - url: "http://157.180.30.219:5001/alert"
+          send_resolved: true
+          http_config:
+            tls_config:
+              insecure_skip_verify: true
+          max_alerts: 100
+
+  templates:
+    - '/etc/alertmanager/config/bitrix_message.tmpl'
+
+volumes:
+  - name: alertmanager-templates
+    configMap:
+      name: alertmanager-templates
+
+extraConfigmapMounts:
+  - name: alertmanager-templates
+    mountPath: /etc/alertmanager/config
+    configMap: alertmanager-templates
+    readOnly: true
+
+
+service:
+  type: NodePort
+  port: 9093
+  nodePort: 31093
+
+replicaCount: 1
