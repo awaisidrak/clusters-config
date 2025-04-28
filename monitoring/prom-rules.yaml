@@ -1,0 +1,172 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: custom-rules
+  namespace: monitoring
+  labels:
+    prometheus: custom-rules
+    role: alert-rules
+    release: prom
+spec:
+  groups:
+    - name: node.rules
+      rules:
+        - alert: HighCPUUsage
+          expr: (1 - avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) by (instance)) * 400 > 200
+
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High CPU usage on {{ $labels.instance }}"
+            description: "CPU usage is above 200% (out of 400%) on {{ $labels.instance }} for more than 2 minutes."
+
+
+        - alert: HighMemoryUsage
+          expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes > 0.8
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High Memory usage on {{ $labels.instance }}"
+            description: "Memory usage is above 80% on {{ $labels.instance }} for more than 2 minutes."
+
+    - name: mongodb.rules
+      rules:
+        - alert: MongoDBReplicationLag
+          expr: mongodb_mongod_replset_member_replication_lag > 10
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "MongoDB replication lag on {{ $labels.instance }}"
+            description: "Replication lag is greater than 10 seconds."
+
+        - alert: MongoDBPrimaryDown
+          expr: absent(mongodb_mongod_replset_member_state{state="PRIMARY"})
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "MongoDB primary is missing"
+            description: "No primary detected in the MongoDB replica set!"
+
+        - alert: MongoDBHighConnections
+          expr: mongodb_mongod_connections{state="current"} > 1000
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High number of connections on {{ $labels.instance }}"
+            description: "MongoDB connections are over 500."
+
+        - alert: MongoDBHighMemoryUsage
+          expr: rate(mongodb_mongod_mem_resident_megabytes[5m]) > 1024
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "MongoDB using high memory"
+            description: "MongoDB instance using more than 1GB resident memory."
+
+        - alert: MongoDBDiskUsageHigh
+          expr: mongodb_mongod_metrics_disk_used_bytes / mongodb_mongod_metrics_disk_total_bytes > 0.9
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "MongoDB disk usage >90% on {{ $labels.instance }}"
+            description: "MongoDB disk is critically full."
+
+    - name: rabbitmq.rules
+      rules:
+        - alert: RabbitMQNodeDown
+          expr: rabbitmq_running{instance=~".*"} == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "RabbitMQ node down"
+            description: "A RabbitMQ node is not running."
+
+        - alert: RabbitMQQueueLengthHigh
+          expr: rabbitmq_queue_messages_ready > 10000
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "RabbitMQ queue length high"
+            description: "More than 10,000 messages waiting."
+
+        - alert: RabbitMQMemoryAlarm
+          expr: rabbitmq_node_mem_alarm > 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "RabbitMQ memory alarm"
+            description: "RabbitMQ node is under memory alarm."
+
+        - alert: RabbitMQFileDescriptorAlarm
+          expr: rabbitmq_node_fd_alarm > 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "RabbitMQ file descriptor alarm"
+            description: "RabbitMQ node has file descriptor alarm triggered."
+
+#        - alert: RabbitMQLowConsumers
+#          expr: rabbitmq_queue_consumers < 1
+#          for: 5m
+#          labels:
+#            severity: warning
+#          annotations:
+#            summary: "RabbitMQ no consumers on {{ $labels.queue }}"
+#            description: "Queue has no consumers for 5 minutes."
+
+    - name: redis.rules
+      rules:
+        - alert: RedisDown
+          expr: redis_up == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Redis instance down"
+            description: "No response from Redis instance."
+
+        - alert: RedisHighMemoryUsage
+          expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Redis memory usage high"
+            description: "Redis instance memory usage over 90%."
+
+        - alert: RedisEvictionsHigh
+          expr: rate(redis_evicted_keys_total[5m]) > 100
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Redis eviction rate high"
+            description: "More than 100 keys evicted per second."
+
+        - alert: RedisPersistenceFail
+          expr: redis_rdb_last_bgsave_status != 1
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Redis persistence (RDB/AOF) failure"
+            description: "Redis persistence has failed."
+
+        - alert: RedisConnectedClientsHigh
+          expr: redis_connected_clients > 500
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High number of connected Redis clients"
