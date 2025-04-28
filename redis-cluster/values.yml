@@ -1,0 +1,41 @@
+replica:
+  replicaCount: 1
+  nodeSelector:
+    role: redis
+
+  resources:
+    requests: {}
+    limits: {}  # No resource limits set
+
+  persistence:
+    enabled: true
+    size: 50Gi
+    storageClass: local-path
+
+sentinel:
+  enabled: true
+  quorum: 2  # Quorum for Sentinel to agree on failover
+  resources:
+    requests: {}
+    limits: {}
+#  resources: {}  # No resource limits set
+
+auth:
+  password: idrakredis321
+
+persistence:
+  enabled: true
+  size: 50Gi
+  storageClass: ""
+
+master:
+  nodeSelector:
+    role: redis
+  persistence:
+    enabled: true
+    size: 50Gi
+    storageClass: local-path
+
+  resources:
+    requests: {}
+    limits: {}  # No resource limits set
