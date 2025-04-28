@@ -1,0 +1,57 @@
+prometheus:
+  prometheusSpec:
+    alertingEndpoints:
+      - name: alertmanager
+        namespace: monitoring
+        port: 9093
+        scheme: http
+
+    serviceMonitorSelectorNilUsesHelmValues: true
+    serviceMonitorSelector: {}
+    serviceMonitorNamespaceSelector: {}
+    ruleSelectorNilUsesHelmValues: true  # enables default alerts
+
+    ruleSelector:
+      matchExpressions:
+        - key: release
+          operator: In
+          values:
+            - prom
+  service:
+    type: NodePort
+    nodePort: 30090  # <— Prometheus UI on http://<NODE-IP>:30090
+
+alertmanager:
+  enabled: false
+
+grafana:
+  sidecar:
+    datasources:
+      defaultDatasourceEnabled: true
+
+  service:
+    type: NodePort
+    nodePort: 30300  # <— Grafana UI on http://<NODE-IP>:30300
+
+prometheus-node-exporter:
+  dnsPolicy: "ClusterFirstWithHostNet"
+  hostNetwork: true
+
+
+kubeControllerManager:
+  enabled: false
+
+kubeEtcd:
+  enabled: false
+
+kubeProxy:
+  enabled: false
+
+kubeScheduler:
+  enabled: false
+
+defaultRules:
+  create: true
+  rules:
+    prometheus: false
+    general: false
