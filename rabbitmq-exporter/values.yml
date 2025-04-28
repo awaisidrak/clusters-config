@@ -1,0 +1,48 @@
+replicaCount: 1
+
+rabbitmq:
+  url: "http://my-rabbitmq.v8bot:15672"
+  user: user
+  password: bitnami123
+
+prometheus:
+  monitor:
+    enabled: true
+    interval: 15s
+    additionalLabels:
+      release: prom
+    relabelings: []
+    metricRelabelings: []
+
+resources:
+  limits: {}
+  requests: {}
+
+rules:
+  enabled: true
+  namespace: monitoring
+  additionalLabels:
+    release: prom
+  additionalRules:
+    - alert: RabbitmqNodeDown
+      expr: rabbitmq_running == 0
+      for: 2m
+      labels:
+        severity: warning
+      annotations:
+        summary: RabbitMQ node is down
+        description: A node in the cluster is not responding.
+
+    - alert: RabbitmqHighConnection
+      expr: rabbitmq_connectionsTotal > 1000
+      for: 1m
+      labels:
+        severity: warning
+      annotations:
+        summary: Too many connections on RabbitMQ
+        description: More than 1000 connections detected
+
+service:
+  type: NodePort
+  port: 9419
+  nodePort: 31245
