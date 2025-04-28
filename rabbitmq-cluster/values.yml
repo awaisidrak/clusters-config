@@ -1,0 +1,42 @@
+replicaCount: 3
+
+auth:
+  username: user
+  password: bitnami123
+  erlangCookie: my-secret-cookie
+
+clustering:
+  enabled: true
+
+nodeSelector:
+  role: db
+
+persistence:
+  enabled: true
+  storageClass: ""
+  accessModes:
+    - ReadWriteOnce
+  size: 50Gi
+
+resources:
+  requests:
+    memory: 512Mi
+    cpu: 500m
+  limits:
+    memory: 6Gi
+    cpu: 2
+
+extraEnvVars:
+  - name: RABBITMQ_DISK_FREE_LIMIT
+    value: "2GB"
+
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: false
+
+service:
+  type: NodePort
+  nodePorts:
+    amqp: 30672
+    manager: 31672
