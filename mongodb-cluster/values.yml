@@ -1,0 +1,37 @@
+architecture: replicaset
+replicaCount: 3
+
+auth:
+  enabled: true
+  rootPassword: supersecurepasss123
+
+externalAccess:
+  enabled: true
+  service:
+    type: NodePort
+    nodePorts:
+      - 31017
+      - 31018
+      - 31019
+  autoDiscovery:
+    enabled: true
+
+accountService:
+  create: true
+
+automountServiceAccountToken: true
+
+rbac:
+  create: true
+
+nodeSelector:
+  role: db
+
+persistence:
+  enabled: true
+  storageClass: local-path
+  size: 80Gi
+
+resources:
+  requests: {}
+  limits: {}
