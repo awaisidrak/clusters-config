@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ghost-asterisk.fullname" . }}
+  labels:
+    {{- include "ghost-asterisk.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "ghost-asterisk.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "ghost-asterisk.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      serviceAccountName: {{ include "ghost-asterisk.serviceAccountName" . }}
+      nodeSelector: {{ toYaml .Values.nodeSelector | nindent 8 }}
+      containers:
+        - name: asterisk
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          ports:
+            - name: sip
+              containerPort: 5060
+              protocol: UDP
+            - name: sip-tcp
+              containerPort: 5060
+              protocol: TCP
+            - name: rtp
+              containerPort: 10000
+              protocol: UDP
+          volumeMounts:
+            - name: config
+              mountPath: /etc/asterisk
+            - name: shared-storage
+              mountPath: /var/lib/asterisk-shared
+
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+
+      volumes:
+        - name: config
+          configMap:
+            name: ghost-config
+        - name: shared-storage
+          persistentVolumeClaim:
+            claimName: asterisk-shared-pvc
